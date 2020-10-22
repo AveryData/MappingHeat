@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<style>
+
+</style>
+
+
+<head>
+  <title>Pitch Tool</title>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v4.js"></script>
+</head>
+
+<body>
+
+
+<select id="selectButton"></select>
+
+<div id="my_dataviz"></div>
+
+
+
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 30, bottom: 30, left: 60},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+//Read the data
+d3.csv("savant_data.csv", function(data) {
+console.log(data);
+
+// add the options to the button
+d3.select("#selectButton")
+  .selectAll('myOptions')
+  .data(d3.map(data, function(d){return d.player_name;}).keys())
+  .enter()
+  .append('option')
+  .text(function (d) { return d; }) // text showed in the menu
+  .attr("value", function (d) { return d; }) // corresponding value returned by the button
+
+
+  // When the button is changed, run the updateChart function
+  d3.select("#selectButton").on("change", function(d) {
+      // recover the option that has been chosen
+      var selectedOption = d3.select(this).property("value")
+      // run the updateChart function with this selected option
+      var filtered = data.filter(function(d) {
+            return d.player_name == selectedOption; });
+
+
+      // Add dots
+      console.log(svg._groups[0])
+      d3.selectAll('circle').remove();
+
+      var new_dots = svg.append('g')
+        .selectAll("dot")
+        .data(filtered)
+        .enter()
+        .append("circle")
+          .attr("cx", function (d) { return x(d.plate_x); } )
+          .attr("cy", function (d) { return y(d.plate_z); } )
+          .attr("r", 1.5)
+          .style("fill", "#12b3a2")
+
+
+
+  })
+
+
+  // Add X axis
+  var x = d3.scaleLinear()
+  .domain([d3.min(data, function(c) { return c.plate_x})-3, d3.max(data, function(c) { return c.plate_x})    ])
+    .range([ 0, width ]);
+  svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+
+  // Add Y axis
+  var y = d3.scaleLinear()
+    .domain([d3.min(data, function(c) { return c.plate_z}), d3.max(data, function(c) { return c.plate_z})    ])
+    .range([ height, 0]);
+  svg.append("g")
+    .call(d3.axisLeft(y));
+
+console.log(d3.map(data, function(c){return c.player_name;}).keys()[0]);
+
+  var first_one = data.filter(function(d) {
+        return d.player_name == d3.map(data, function(c){return c.player_name;}).keys()[0]; });
+
+
+  // Initialize
+  var new_dots = svg
+    .append('g')
+    .selectAll("dot")
+    .data(first_one)
+    .enter()
+    .append("circle")
+      .attr("cx", function (d) { return x(d.plate_x); } )
+      .attr("cy", function (d) { return y(d.plate_z); } )
+      .attr("r", 1.5)
+      .style("fill", "#69b3a2")
+
+    // top
+    svg.append('line')
+      .style("stroke", "grey")
+      .style("stroke-width", 1)
+      .style("stroke-dasharray", ("3, 3"))
+      .attr("x1", x(-1))
+      .attr("y1", y(3.5))
+      .attr("x2", x(1))
+      .attr("y2", y(3.5));
+
+      // bottom
+      svg.append('line')
+        .style("stroke", "grey")
+        .style("stroke-width", 1)
+        .style("stroke-dasharray", ("3, 3"))
+        .attr("x1", x(-1))
+        .attr("y1", y(1))
+        .attr("x2", x(1))
+        .attr("y2", y(1));
+
+        // left
+        svg.append('line')
+          .style("stroke", "grey")
+          .style("stroke-width", 1)
+          .style("stroke-dasharray", ("3, 3"))
+          .attr("x1", x(-1))
+          .attr("y1", y(1))
+          .attr("x2", x(-1))
+          .attr("y2", y(3.5));
+
+          // right
+          svg.append('line')
+            .style("stroke", "grey")
+            .style("stroke-width", 1)
+            .style("stroke-dasharray", ("3, 3"))
+            .attr("x1", x(1))
+            .attr("y1", y(1))
+            .attr("x2", x(1))
+            .attr("y2", y(3.5));
+
+
+
+
+
+
+
+})
+
+
+
+
+
+
+</script>
