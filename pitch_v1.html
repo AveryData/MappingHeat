@@ -7,7 +7,8 @@
 <head>
   <title>Pitch Tool</title>
   <meta charset="utf-8">
-  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="lib/d3.v5.min.js"></script>
+  <script src="lib/jquery-3.5.1.min.js"></script>
 </head>
 
 <body>
@@ -35,9 +36,67 @@ var svg = d3.select("#my_dataviz")
     .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")");
 
+var baseApiUrl = 'http://localhost:5000'
+
+function getPitcherData (pitcher) {
+  return $.get({
+    url: baseApiUrl +'/stats/pitcher?name=' + encodeURIComponent(pitcher),
+    dataType: 'json',
+    success: function (pitcherData) {
+      return pitcherData.responseJson
+    },
+    error: function (error) {
+      console.error('Error loading pitcher data', error)
+    }
+  })
+}
+
+function getPitchTypeData (pitcher, pitch) {
+  return $.get({
+    url: baseApiUrl + '/stats/pitcher/pitch?name=' + encodeURIComponent(pitcher)
+      + '&pitch=' + encodeURIComponent(pitch),
+    dataType: 'json',
+    success: function (pitchData) {
+      return pitchData
+    },
+    error: function (error) {
+      console.error('Error loading pitch type data', error)
+    }
+  })
+}
+
+function getPitchFeatureData (pitcher, feature, value) {
+  return $.get({
+    url: baseApiUrl + '/stats/pitcher?name=' + encodeURIComponent(pitcher)
+      + '&feature=' + encodeURIComponent(feature) + '&value=' + encodeURIComponent(value),
+    dataType: 'json',
+    success: function (pitchData) {
+      return pitchData
+    },
+    error: function (error) {
+      console.error('Error loading pitch type data', error)
+    }
+  })
+}
+
+
+$.when(
+  getPitcherData('Brad Hand'),
+  getPitchTypeData('Brad Hand', 'FF'),
+  getPitchFeatureData('Brad Hand', 'release_speed', '78.7')
+).done(function(pitcherRes, pitchRes, pitchFeatureRes) {
+  var pitcherData = pitcherRes[0]
+  var pitchData = pitchRes[0]
+  var pitchFeatureData = pitchRes[0]
+
+  console.log(pitcherData);
+  console.log(pitchData);
+  console.log(pitchFeatureData);
+})
+
 //Read the data
 d3.csv("savant_data.csv", function(data) {
-console.log(data);
+// console.log(data);
 
 // add the options to the button
 d3.select("#selectButton")
