@@ -10,6 +10,13 @@ bp = Blueprint('stats', __name__, url_prefix='/stats')
 
 pitching_data = pd.DataFrame()
 
+@bp.route('/pitchers/names', methods=['GET'])
+def pitcher_names():
+    name_query = "SELECT DISTINCT player_name FROM pitching_data"
+    names = [row[0] for row in get_db().execute(name_query).fetchall()]
+
+    return json.dumps(names)
+
 @bp.route('/pitcher', methods=['GET'])
 def pitcher():
     name = request.args.get('name')
