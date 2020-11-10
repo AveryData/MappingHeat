@@ -1,0 +1,6 @@
+*.csv
+*.sqlite
+*.DS_Store
+venv/
+*.sqlite-journal
+__pycache__
