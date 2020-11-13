@@ -29,6 +29,11 @@ def create_app(test_config=None):
     from . import db
     db.init_app(app)
 
+    # generate model on startup
+    from . import model
+    with app.app_context():
+        model.get_model()
+
     from . import stats
     app.register_blueprint(stats.bp)
 

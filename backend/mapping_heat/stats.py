@@ -5,6 +5,7 @@ from flask import (
     Blueprint, request
 )
 from .db import get_db
+from .model import predict
 
 bp = Blueprint('stats', __name__, url_prefix='/stats')
 
@@ -45,3 +46,13 @@ def pitch_feature():
     pitch_data = [dict(row) for row in get_db().execute(feature_query).fetchall()]
 
     return json.dumps(pitch_data)
+
+@bp.route('/predict', methods=['GET'])
+def predict_pitch():
+    name = [request.args.get('name')]
+    pitch = [request.args.get('pitch')]
+    speed = [request.args.get('speed')]
+    zone = [request.args.get('zone')]
+
+    result = predict({ 'name': name, 'pitch_type': pitch, 'pitch_speed': speed, 'zone': zone})
+    return json.dumps({'hit_prediction': result.item(0) })
