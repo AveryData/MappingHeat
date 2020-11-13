@@ -1,14 +1,12 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from flask import g
 
 from .db import get_db
 
 cache = {}
 
 def init_model():
-  df = pd.read_sql("SELECT * FROM pitching_data WHERE zone IS NOT NULL", get_db())
+  df = pd.read_sql("SELECT player_name, pitch_type, CAST(release_speed AS float) as release_speed, zone, description FROM pitching_data WHERE zone IS NOT NULL", get_db())
   features = ['player_name', 'pitch_type', 'release_speed', 'zone']
 
   x_norm = df[features]
