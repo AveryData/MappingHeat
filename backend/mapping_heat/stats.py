@@ -54,5 +54,5 @@ def predict_pitch():
     speed = [request.args.get('speed')]
     zone = [request.args.get('zone')]
 
-    result = predict({ 'name': name, 'pitch_type': pitch, 'pitch_speed': speed, 'zone': zone})
+    result = predict({ 'player_name': name, 'pitch_type': pitch, 'release_speed': speed, 'zone': zone})
     return json.dumps({'hit_prediction': result.item(0) })

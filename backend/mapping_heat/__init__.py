@@ -32,7 +32,8 @@ def create_app(test_config=None):
     # generate model on startup
     from . import model
     with app.app_context():
-        model.get_model()
+        model.init_model()
+        print('Initialized model...')
 
     from . import stats
     app.register_blueprint(stats.bp)

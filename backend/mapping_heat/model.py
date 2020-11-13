@@ -5,33 +5,31 @@ from flask import g
 
 from .db import get_db
 
+cache = {}
+
 def init_model():
-  df = pd.read_sql("SELECT * FROM pitching_data LIMIT 1000", get_db())
+  df = pd.read_sql("SELECT * FROM pitching_data WHERE zone IS NOT NULL", get_db())
   features = ['player_name', 'pitch_type', 'release_speed', 'zone']
 
-  df_sanitized = df[~df.zone.isnull()]
-
-  x_norm = df_sanitized[features]
+  x_norm = df[features]
   x = pd.get_dummies(x_norm)
-  y = df_sanitized['description'].apply(lambda d: hot_encode_des(d))
+  y = df['description'].apply(lambda d: hot_encode_des(d))
 
   model = LogisticRegression(max_iter=500)
   model.fit(x, y)
 
-  g.model = model
-  g.x_cols = x.columns
-
-  return model, x.columns
+  cache['model'] = model
+  cache['x_cols'] = x.columns
 
 def get_model():
-  if 'model' not in g:
+  if 'model' not in cache:
     init_model()
-  return g.model
+  return cache['model']
 
 def get_xcols():
-  if 'x_cols' not in g:
+  if 'x_cols' not in cache:
     init_model()
-  return g.x_cols
+  return cache['x_cols']
 
 def predict(params):
   features_df = pd.get_dummies(pd.DataFrame(params))
