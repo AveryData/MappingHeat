@@ -51,7 +51,7 @@ def pitch_feature():
 def predict_pitch():
     name = [request.args.get('name')]
     pitch = [request.args.get('pitch')]
-    speed = [request.args.get('speed')]
+    speed = [request.args.get('speed', type=float)]
     zone = [request.args.get('zone')]
 
     result = predict({ 'player_name': name, 'pitch_type': pitch, 'release_speed': speed, 'zone': zone})
