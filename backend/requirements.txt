@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 altair==4.1.0
 ansiwrap==0.8.4
 antlr4-python3-runtime==4.8
@@ -155,3 +156,13 @@ Werkzeug==1.0.1
 wfuzz==2.4.6
 widgetsnbextension==3.5.1
 wrapt==1.12.1
+=======
+pandas
+sklearn
+numpy
+pickle
+flask
+sqlite
+click
+csv_to_sqlite
+>>>>>>> 0fbb9c6f759c8ba6a2a263aaaecdef029b08a2a5
