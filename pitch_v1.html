@@ -52,24 +52,23 @@ var margin = {top: 10, right: 30, bottom: 30, left: 60},
 var svg;
 function initSvg () {
   var svg = d3.select("#my_dataviz")
-  .append("svg")
+    .append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
-  .append("g")
+    .append("g")
     .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
+      "translate(" + margin.left + "," + margin.top + ")");
   return svg
 }
 
 
 var div = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
+  .attr("class", "tooltip")
+  .style("opacity", 0);
 
 // Speed selector
 d3.select("input[type=range]#selectSpeed").on("input", function() {
-  var speed;
-  speed = this.value;
+  var speed = this.value;
   d3.select("output#opacity").text(d3.format(".0f")(speed) + " mph");
   return d3.selectAll("circle.points").attr("opacity", speed);
 });
@@ -223,12 +222,6 @@ function continuous(selector_id, colorscale) {
     .call(legendaxis);
 };
 
-
-
-
-
-
-
 // function to start strike zone
 function drawStrikeZone (pitchingData) {
   if(svg) {
@@ -259,34 +252,31 @@ function drawStrikeZone (pitchingData) {
     .call(d3.axisLeft(y))
 
 
-// PAINT STRIKE ZONE
+  // PAINT STRIKE ZONE
 
 
-// Constants for the strike zone
-var far_left = -1;
-var far_right = 1;
-var top = 3.5;
-var bottom = 1;
+  // Constants for the strike zone
+  var far_left = -1;
+  var far_right = 1;
+  var top = 3.5;
+  var bottom = 1;
 
-var h_1 = far_left + (far_right - far_left)/3
-var h_2 = far_left + 2*(far_right - far_left)/3
+  var h_1 = far_left + (far_right - far_left)/3
+  var h_2 = far_left + 2*(far_right - far_left)/3
 
-var v_1 = bottom + (top - bottom)/3
-var v_2 = bottom + 2*(top - bottom)/3
+  var v_1 = bottom + (top - bottom)/3
+  var v_2 = bottom + 2*(top - bottom)/3
 
-var v_middle = (top-bottom)/2 + bottom
-var h_middle = (far_right - far_left)/2
+  var v_middle = (top-bottom)/2 + bottom
+  var h_middle = (far_right - far_left)/2
 
-var outer_height = v_middle/.8
-var outer_width = h_middle/1.8
-
-
+  var outer_height = v_middle/.8
+  var outer_width = h_middle/1.8
 
 
-
-// Pain the inside borders (currently getting painted over)
-    // h_1
-    svg.append('line')
+  // Pain the inside borders (currently getting painted over)
+  // h_1
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -296,8 +286,8 @@ var outer_width = h_middle/1.8
     .attr("y2", y(top));
 
 
-    // h_2
-    svg.append('line')
+  // h_2
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -306,8 +296,8 @@ var outer_width = h_middle/1.8
     .attr("x2", x(h_2))
     .attr("y2", y(top));
 
-    // v_1
-    svg.append('line')
+  // v_1
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -318,8 +308,8 @@ var outer_width = h_middle/1.8
 
 
 
-    // v_2
-    svg.append('line')
+  // v_2
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -329,196 +319,189 @@ var outer_width = h_middle/1.8
     .attr("y2", y(v_2));
 
 
-    // Background sqaures
+  // Background sqaures
 
-    // Bottom Row
-    var bl = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(v_1))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.33));
+  // Bottom Row
+  var bl = svg.append("rect")
+    .attr("x", x(far_left))
+    .attr("y", y(v_1))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.33));
 
-    var bm = svg.append("rect")
-        .attr("x", x(h_1))
-        .attr("y", y(v_1))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.13));
+  var bm = svg.append("rect")
+    .attr("x", x(h_1))
+    .attr("y", y(v_1))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.13));
 
-    var br = svg.append("rect")
-        .attr("x", x(h_2))
-        .attr("y", y(v_1))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.03));
-
-
-    // Middle Row
-    var ml = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(v_2))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.12));
-
-    var mm = svg.append("rect")
-        .attr("x", x(h_1))
-        .attr("y", y(v_2))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.1));
-
-    var mr = svg.append("rect")
-        .attr("x", x(h_2))
-        .attr("y", y(v_2))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.22));
+  var br = svg.append("rect")
+    .attr("x", x(h_2))
+    .attr("y", y(v_1))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.03));
 
 
-    // top Row
-    var tl = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(top))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.23));
+  // Middle Row
+  var ml = svg.append("rect")
+    .attr("x", x(far_left))
+    .attr("y", y(v_2))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.12));
 
-    var tm = svg.append("rect")
-        .attr("x", x(h_1))
-        .attr("y", y(top))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.07));
+  var mm = svg.append("rect")
+    .attr("x", x(h_1))
+    .attr("y", y(v_2))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.1));
 
-    var tr = svg.append("rect")
-        .attr("x", x(h_2))
-        .attr("y", y(top))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.23));
+  var mr = svg.append("rect")
+    .attr("x", x(h_2))
+    .attr("y", y(v_2))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.22));
 
 
+  // top Row
+  var tl = svg.append("rect")
+    .attr("x", x(far_left))
+    .attr("y", y(top))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.23));
 
-// Outer zones
-        // Bottom Left
-    var z_13_1 = svg.append("rect")
-        .attr("x", x(far_left - outer_width))
-        .attr("y", y(v_middle))
-        .attr("width",x(far_left) - x(far_left - outer_width))
-        .attr("height",  y(outer_height) )
-        .style("fill", myColor(.13));
+  var tm = svg.append("rect")
+    .attr("x", x(h_1))
+    .attr("y", y(top))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.07));
 
-    var z_11_2 = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(bottom))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.13));
+  var tr = svg.append("rect")
+    .attr("x", x(h_2))
+    .attr("y", y(top))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(.23));
 
 
 
-        // bottom right
-    var z_14_1 = svg.append("rect")
-        .attr("x", x(far_right))
-        .attr("y", y(v_middle))
-        .attr("width", x(far_left) - x(far_left - outer_width))
-        .attr("height",   y(outer_height))
-        .style("fill", myColor(.04));
+  // Outer zones
+  // Bottom Left
+  var z_13_1 = svg.append("rect")
+    .attr("x", x(far_left - outer_width))
+    .attr("y", y(v_middle))
+    .attr("width",x(far_left) - x(far_left - outer_width))
+    .attr("height",  y(outer_height) )
+    .style("fill", myColor(.13));
 
-
-    var z_14_2 = svg.append("rect")
-        .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
-        .attr("y", y(bottom))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.04));
-
-
-
-        // top left
-    var z_11_1 = svg.append("rect")
-        .attr("x", x(far_left - outer_width))
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",x(far_left) - x(far_left - outer_width))
-        .attr("height",  y(outer_height) )
-        .style("fill", myColor(.15));
-
-    var z_11_2 = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.15));
+  var z_11_2 = svg.append("rect")
+    .attr("x", x(far_left))
+    .attr("y", y(bottom))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(.13));
 
 
 
-// top right
-    var z_12_1 = svg.append("rect")
-        .attr("x", x(far_right))
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",x(far_left) - x(far_left - outer_width))
-        .attr("height",  y(outer_height) )
-        .style("fill", myColor(.2));
+      // bottom right
+  var z_14_1 = svg.append("rect")
+    .attr("x", x(far_right))
+    .attr("y", y(v_middle))
+    .attr("width", x(far_left) - x(far_left - outer_width))
+    .attr("height",   y(outer_height))
+    .style("fill", myColor(.04));
 
 
-    var z_12_2 = svg.append("rect")
-        .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.2));
-
-
-
+  var z_14_2 = svg.append("rect")
+    .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
+    .attr("y", y(bottom))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(.04));
 
 
 
+      // top left
+  var z_11_1 = svg.append("rect")
+    .attr("x", x(far_left - outer_width))
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",x(far_left) - x(far_left - outer_width))
+    .attr("height",  y(outer_height) )
+    .style("fill", myColor(.15));
+
+  var z_11_2 = svg.append("rect")
+    .attr("x", x(far_left))
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(.15));
 
 
-        // MAIN strike zone outline BOX
-        var main_box_stroke_with = 3
 
-        // top
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_left))
-        .attr("y1", y(top))
-        .attr("x2", x(far_right))
-        .attr("y2", y(top));
+  // top right
+  var z_12_1 = svg.append("rect")
+    .attr("x", x(far_right))
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",x(far_left) - x(far_left - outer_width))
+    .attr("height",  y(outer_height) )
+    .style("fill", myColor(.2));
 
-        // bottom
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_left))
-        .attr("y1", y(bottom))
-        .attr("x2", x(far_right))
-        .attr("y2", y(bottom));
 
-        // left
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_left))
-        .attr("y1", y(bottom))
-        .attr("x2", x(far_left))
-        .attr("y2", y(top));
+  var z_12_2 = svg.append("rect")
+    .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(.2));
 
-        // right
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_right))
-        .attr("y1", y(bottom))
-        .attr("x2", x(far_right))
-        .attr("y2", y(top));
+  // MAIN strike zone outline BOX
+  var main_box_stroke_with = 3
+
+  // top
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_left))
+    .attr("y1", y(top))
+    .attr("x2", x(far_right))
+    .attr("y2", y(top));
+
+  // bottom
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_left))
+    .attr("y1", y(bottom))
+    .attr("x2", x(far_right))
+    .attr("y2", y(bottom));
+
+  // left
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_left))
+    .attr("y1", y(bottom))
+    .attr("x2", x(far_left))
+    .attr("y2", y(top));
+
+  // right
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_right))
+    .attr("y1", y(bottom))
+    .attr("x2", x(far_right))
+    .attr("y2", y(top));
 
 
   // add pitch dots
@@ -527,26 +510,25 @@ var outer_width = h_middle/1.8
     .data(pitchingData)
     .enter()
     .append("circle")
-      .attr("cx", function (d) { return x(d.plate_x); } )
-      .attr("cy", function (d) { return y(d.plate_z); } )
-      .attr("r", 1.5)
-      .style("fill", "#010101")
-      .on("mouseover", function(d) {
-       div.transition()
-         .duration(50)
-         .style("opacity", .9);
-       div.html(
-         'Pitch Date: ' + d.game_date
-         + "<br/>"
-         + 'Outcome: ' + d.description
-         + "<br/>"
-         + 'Speed: ' + d.release_speed
+    .attr("cx", function (d) { return x(d.plate_x); } )
+    .attr("cy", function (d) { return y(d.plate_z); } )
+    .attr("r", 1.5)
+    .style("fill", "#010101")
+    .on("mouseover", function(d) {
+      div.transition()
+        .duration(50)
+        .style("opacity", .9);
+      div.html(
+        'Pitch Date: ' + d.game_date
+        + "<br/>"
+        + 'Outcome: ' + d.description
+        + "<br/>"
+        + 'Speed: ' + d.release_speed
 
-       )
-
-         .style("left", (d3.event.pageX) + "px")
-         .style("top", (d3.event.pageY - 28) + "px");
-       });
+      )
+        .style("left", (d3.event.pageX) + "px")
+        .style("top", (d3.event.pageY - 28) + "px");
+    });
 
 // BASE BALL
     // add baseball
@@ -608,9 +590,6 @@ getPitcherNames().then(function(names) {
   // Get the data for the default pitcher
   getPitcherData(selectedOption).then(function(pitchingData) {
 
-
-console.log(pitchingData);
-
     // add the options to the pitch type selector
     var pitch_types = d3.set(d3.values(pitchingData).map(function(d) {return d.pitch_type})).values()
 
@@ -626,9 +605,6 @@ console.log(pitchingData);
     // STEP 3 - draw the axis and strike zone
     drawStrikeZone(pitchingData)
 
-
-
-
     // STEP 4 - wait for a new person
     // When the button is changed, run the updateChart function
     d3.select("#selectButton").on("change", function(d) {
@@ -640,76 +616,71 @@ console.log(pitchingData);
         .then(function (data) {
           drawStrikeZone(data)
         })
+        // // STEP 5 - wait for a new pitch type
+        // // When the button is changed, run the updateChart function
+        // d3.select("#selecttype").on("change", function(d) {
+        //   // recover the option that has been chosen
+        //   var selectedType = d3.select('#selecttype').property("value")
+
+        //   d3.selectAll('circle').remove()
 
 
 
-        // STEP 5 - wait for a new pitch type
-        // When the button is changed, run the updateChart function
-        d3.select("#selecttype").on("change", function(d) {
-          // recover the option that has been chosen
-          var selectedType = d3.select('#selecttype').property("value")
-
-          d3.selectAll('circle').remove()
-
-
-
-              var new_dots = svg.append('g')
-                .selectAll("dot")
-                .data(data, function (d) {return d.pitch_type == selectedType})
-                .enter()
-                .append("circle")
-                  .attr("cx", function (d) { return x(d.plate_x); } )
-                  .attr("cy", function (d) { return y(d.plate_z); } )
-                  .attr("r", 1.5)
-                  .style("fill", "#12a3a2")
-            }) // end new pitch type
-
-
-
-
-        //// the type selectors
-        getPitcherData(selectedOption)
-          .then(function (data) {
-            // Add dots
-            //console.log(svg._groups[0])
-            d3.selectAll('circle').remove()
+        //       var new_dots = svg.append('g')
+        //         .selectAll("dot")
+        //         .data(data, function (d) {return d.pitch_type == selectedType})
+        //         .enter()
+        //         .append("circle")
+        //           .attr("cx", function (d) { return x(d.plate_x); } )
+        //           .attr("cy", function (d) { return y(d.plate_z); } )
+        //           .attr("r", 1.5)
+        //           .style("fill", "#12a3a2")
+        //     }) // end new pitch type
 
 
 
 
-            //console.log(data);
-            //console.log(d3.values(data).map(function(d) {return d.pitch_type}));
-
-            // add the options to the butto
-
-            var selectedType = d3.select('#selecttype').property("value")
-
-            console.log(selectedType)
-
-            // Add X axis
-            var x = d3.scaleLinear()
-              .domain([d3.min(data, function(c) { return c.plate_x})-3, d3.max(data, function(c) { return c.plate_x})    ])
-              .range([ 0, width ])
-            svg.select('g.x.axis').call(d3.axisBottom(x));
-
-            // Add Y axis
-            var y = d3.scaleLinear()
-              .domain([d3.min(data, function(c) { return c.plate_z}), d3.max(data, function(c) { return c.plate_z})    ])
-              .range([ height, 0])
-              svg.select('g.y.axis').call(d3.axisLeft(y));
-
-            var new_dots = svg.append('g')
-              .selectAll("dot")
-              .data(data, function (d) {return d.pitch_type == selectedType})
-              .enter()
-              .append("circle")
-                .attr("cx", function (d) { return x(d.plate_x); } )
-                .attr("cy", function (d) { return y(d.plate_z); } )
-                .attr("r", 1.5)
-                .style("fill", "#12a3a2")
-          })
+        // //// the type selectors
+        // getPitcherData(selectedOption)
+        //   .then(function (data) {
+        //     // Add dots
+        //     //console.log(svg._groups[0])
+        //     d3.selectAll('circle').remove()
 
 
+
+
+        //     //console.log(data);
+        //     //console.log(d3.values(data).map(function(d) {return d.pitch_type}));
+
+        //     // add the options to the butto
+
+        //     var selectedType = d3.select('#selecttype').property("value")
+
+        //     console.log(selectedType)
+
+        //     // Add X axis
+        //     var x = d3.scaleLinear()
+        //       .domain([d3.min(data, function(c) { return c.plate_x})-3, d3.max(data, function(c) { return c.plate_x})    ])
+        //       .range([ 0, width ])
+        //     svg.select('g.x.axis').call(d3.axisBottom(x));
+
+        //     // Add Y axis
+        //     var y = d3.scaleLinear()
+        //       .domain([d3.min(data, function(c) { return c.plate_z}), d3.max(data, function(c) { return c.plate_z})    ])
+        //       .range([ height, 0])
+        //       svg.select('g.y.axis').call(d3.axisLeft(y));
+
+        //     var new_dots = svg.append('g')
+        //       .selectAll("dot")
+        //       .data(data, function (d) {return d.pitch_type == selectedType})
+        //       .enter()
+        //       .append("circle")
+        //         .attr("cx", function (d) { return x(d.plate_x); } )
+        //         .attr("cy", function (d) { return y(d.plate_z); } )
+        //         .attr("r", 1.5)
+        //         .style("fill", "#12a3a2")
+        //   })
     })
   })
 })
