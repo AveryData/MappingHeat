@@ -591,9 +591,8 @@ function generateVisualization (pitcherChanged) {
 
   var selectedPitch = d3.select('#selectType').property('value')
   getPitcherData(selectedPitcher).then(function (pitchingData) {
-    setPitchTypes(pitchingData)
-
     if (pitcherChanged) {
+      setPitchTypes(pitchingData)
       selectedPitch = d3.select('#selectType').property('value')
     }
     getZoneProbabilities(selectedPitcher, selectedPitch, selectedSpeed)
