@@ -60,4 +60,4 @@ def predict_zones():
             prediction = predict({'player_name': name, 'pitch_type': pitch, 'release_speed': speed, 'norm_zone': zone})
             results[i] = prediction.item(1)
 
-    return json.dumps({'zone_probabilities': results })
+    return json.dumps(results)

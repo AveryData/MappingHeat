@@ -232,7 +232,7 @@ function continuous(selector_id, colorscale) {
 };
 
 // function to draw strike zone
-function drawStrikeZone (pitchingData) {
+function drawStrikeZone (pitchingData, zoneProbs) {
   if(svg) {
     d3.selectAll('svg').remove();
   }
@@ -336,21 +336,21 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(v_1))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.33));
+    .style("fill", myColor(zoneProbs['7']));
 
   var bm = svg.append("rect")
     .attr("x", x(h_1))
     .attr("y", y(v_1))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.13));
+    .style("fill", myColor(zoneProbs['8']));
 
   var br = svg.append("rect")
     .attr("x", x(h_2))
     .attr("y", y(v_1))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.03));
+    .style("fill", myColor(zoneProbs['9']));
 
 
   // Middle Row
@@ -359,21 +359,21 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(v_2))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.12));
+    .style("fill", myColor(zoneProbs['4']));
 
   var mm = svg.append("rect")
     .attr("x", x(h_1))
     .attr("y", y(v_2))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.1));
+    .style("fill", myColor(zoneProbs['5']));
 
   var mr = svg.append("rect")
     .attr("x", x(h_2))
     .attr("y", y(v_2))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.22));
+    .style("fill", myColor(zoneProbs['6']));
 
 
   // top Row
@@ -382,21 +382,21 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(top))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.23));
+    .style("fill", myColor(zoneProbs['1']));
 
   var tm = svg.append("rect")
     .attr("x", x(h_1))
     .attr("y", y(top))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.07));
+    .style("fill", myColor(zoneProbs['2']));
 
   var tr = svg.append("rect")
     .attr("x", x(h_2))
     .attr("y", y(top))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(.23));
+    .style("fill", myColor(zoneProbs['3']));
 
 
 
@@ -407,14 +407,14 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(v_middle))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
-    .style("fill", myColor(.13));
+    .style("fill", myColor(zoneProbs['13']));
 
-  var z_11_2 = svg.append("rect")
+  var z_13_2 = svg.append("rect")
     .attr("x", x(far_left))
     .attr("y", y(bottom))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(.13));
+    .style("fill", myColor(zoneProbs['13']));
 
 
 
@@ -424,7 +424,7 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(v_middle))
     .attr("width", x(far_left) - x(far_left - outer_width))
     .attr("height",   y(outer_height))
-    .style("fill", myColor(.04));
+    .style("fill", myColor(zoneProbs['14']));
 
 
   var z_14_2 = svg.append("rect")
@@ -432,7 +432,7 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(bottom))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(.04));
+    .style("fill", myColor(zoneProbs['14']));
 
 
 
@@ -442,14 +442,14 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
-    .style("fill", myColor(.15));
+    .style("fill", myColor(zoneProbs['11']));
 
   var z_11_2 = svg.append("rect")
     .attr("x", x(far_left))
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(.15));
+    .style("fill", myColor(zoneProbs['11']));
 
 
 
@@ -459,7 +459,7 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
-    .style("fill", myColor(.2));
+    .style("fill", myColor(zoneProbs['12']));
 
 
   var z_12_2 = svg.append("rect")
@@ -467,7 +467,7 @@ function drawStrikeZone (pitchingData) {
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(.2));
+    .style("fill", myColor(zoneProbs['12']));
 
   // MAIN strike zone outline BOX
   var main_box_stroke_with = 3
@@ -585,26 +585,34 @@ function setPitchTypes (pitchingData) {
 }
 
 // generate visualization based on current input values
-function generateVisualization () {
+function generateVisualization (pitcherChanged) {
   var selectedPitcher = d3.select('#selectPitcher').property("value")
-  getPitcherData(selectedPitcher).then(function(pitchingData) {
+  var selectedSpeed = d3.select('#selectSpeed').property('value')
+
+  var selectedPitch = d3.select('#selectType').property('value')
+  getPitcherData(selectedPitcher).then(function (pitchingData) {
     setPitchTypes(pitchingData)
 
-    var selectedPitch = d3.select('#selectType').property('value')
-    var selectedSpeed = d3.select('#selectSpeed').property('value')
+    if (pitcherChanged) {
+      selectedPitch = d3.select('#selectType').property('value')
+    }
     getZoneProbabilities(selectedPitcher, selectedPitch, selectedSpeed)
-      .then(function(zone_probs) {
-        drawStrikeZone(pitchingData)
-      }) 
+      .then(function (zoneProbs) {
+        drawStrikeZone(pitchingData, zoneProbs)
+      })
   })
 }
 
 d3.select("#selectPitcher").on("change", function(d) {
-  generateVisualization()
+  generateVisualization(true)
 })
 
 d3.select("#selectType").on("change", function(d) {
-  generateVisualization()
+  generateVisualization(false)
+})
+
+d3.select("#selectSpeed").on("change", function(d) {
+  generateVisualization(false)
 })
 
 // STEP 1
@@ -622,7 +630,7 @@ getPitcherNames().then(function(names) {
 
   // STEP 2 - get the data for the selected name
   // Get the selected name
-  generateVisualization()
+  generateVisualization(true)
 })
 
 
