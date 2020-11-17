@@ -13,7 +13,7 @@ pitching_data = pd.DataFrame()
 
 @bp.route('/pitchers/names', methods=['GET'])
 def pitcher_names():
-    name_query = "SELECT DISTINCT player_name FROM pitching_data"
+    name_query = "SELECT DISTINCT player_name FROM pitching_data ORDER BY player_name ASC"
     names = [row[0] for row in get_db().execute(name_query).fetchall()]
 
     return json.dumps(names)
