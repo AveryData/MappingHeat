@@ -17,6 +17,10 @@ rect.selected {
   fill: #00ff00 !important;
 }
 
+body {
+  transform: scale(1.75);
+  transform-origin: 0 0;
+}
 </style>
 
 
@@ -39,10 +43,6 @@ rect.selected {
 <div id="hitProbability" style="max-width: 100px; margin-top:25px; margin-left: 20px;"></div>
 <script>
 
-
-
-
-
 // SETTING SVG and Canvas DIMENSIONS
 // set the dimensions and margins of the graph
 var margin = {top: 10, right: 30, bottom: 30, left: 60},
@@ -61,7 +61,6 @@ function initSvg () {
       "translate(" + margin.left + "," + margin.top + ")");
   return svg
 }
-
 
 var div = d3.select("body").append("div")
   .attr("class", "tooltip")
