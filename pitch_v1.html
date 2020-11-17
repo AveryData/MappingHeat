@@ -26,9 +26,9 @@ div.tooltip {
 <body>
 
 <h3>Mapping Heat</h1>
-<select id="selectButton"></select>
-<select id="selecttype"></select>
-<input type="range" min="10", max="110", step="5", value="90" id="selectSpeed"/>
+<select id="selectPitcher"></select>
+<select id="selectType"></select>
+<input type="range" min="55", max="110", step="1", value="90" id="selectSpeed"/>
 <output id="opacity">90 mph</output>
 <div id="my_dataviz"></div>
 <div style="display:inline-block; float:right" id="legend"></div>
@@ -137,13 +137,22 @@ function getPitcherNames () {
     }
   })
 }
+
+// get zone probabalities
+function getZoneProbabilities (pitcher, pitch_type, speed) {
+  var qs = '?name=' + pitcher + "&pitch_type=" + pitch_type + "&release_speed=" + speed
+  return $.get({
+    url: baseApiUrl + '/stats/predict' + encodeURI(qs),
+    dataType: 'json',
+    success: function (zoneProbs) {
+      return zoneProbs
+    },
+    error: function (error) {
+      console.error('Error generating zone probabilities', error)
+    }
+  })
+}
 // End code to go get data
-
-
-
-
-
-
 
 
 // define color Map
@@ -222,7 +231,7 @@ function continuous(selector_id, colorscale) {
     .call(legendaxis);
 };
 
-// function to start strike zone
+// function to draw strike zone
 function drawStrikeZone (pitchingData) {
   if(svg) {
     d3.selectAll('svg').remove();
@@ -394,7 +403,7 @@ function drawStrikeZone (pitchingData) {
   // Outer zones
   // Bottom Left
   var z_13_1 = svg.append("rect")
-    .attr("x", x(far_left - outer_width))
+    .attr("x", x(far_left - outer_width) + 1)
     .attr("y", y(v_middle))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
@@ -411,7 +420,7 @@ function drawStrikeZone (pitchingData) {
 
       // bottom right
   var z_14_1 = svg.append("rect")
-    .attr("x", x(far_right))
+    .attr("x", x(far_right) - 1)
     .attr("y", y(v_middle))
     .attr("width", x(far_left) - x(far_left - outer_width))
     .attr("height",   y(outer_height))
@@ -429,7 +438,7 @@ function drawStrikeZone (pitchingData) {
 
       // top left
   var z_11_1 = svg.append("rect")
-    .attr("x", x(far_left - outer_width))
+    .attr("x", x(far_left - outer_width) + 1)
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
@@ -446,7 +455,7 @@ function drawStrikeZone (pitchingData) {
 
   // top right
   var z_12_1 = svg.append("rect")
-    .attr("x", x(far_right))
+    .attr("x", x(far_right) - 1)
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
@@ -560,21 +569,50 @@ function drawStrikeZone (pitchingData) {
 
 } // End intialize
 
+// set pitch type selector based on pitcher data
+function setPitchTypes (pitchingData) {
+  var pitchTypes = d3.set(d3.values(pitchingData).map(function(d) {return d.pitch_type})).values()
+  d3.select("#selectType")
+    .selectAll('option')
+    .remove()
+  d3.select("#selectType")
+    .selectAll('myOptions')
+    .data(pitchTypes)
+    .enter()
+    .append('option')
+    .text(function (d) { return d; }) // text showed in the menu
+    .attr("value", function (d) { return d; }) // corresponding value returned by the button 
+}
 
+// generate visualization based on current input values
+function generateVisualization () {
+  var selectedPitcher = d3.select('#selectPitcher').property("value")
+  getPitcherData(selectedPitcher).then(function(pitchingData) {
+    setPitchTypes(pitchingData)
 
+    var selectedPitch = d3.select('#selectType').property('value')
+    var selectedSpeed = d3.select('#selectSpeed').property('value')
+    getZoneProbabilities(selectedPitcher, selectedPitch, selectedSpeed)
+      .then(function(zone_probs) {
+        drawStrikeZone(pitchingData)
+      }) 
+  })
+}
 
+d3.select("#selectPitcher").on("change", function(d) {
+  generateVisualization()
+})
 
-
-
-
-
+d3.select("#selectType").on("change", function(d) {
+  generateVisualization()
+})
 
 // STEP 1
 // Start by getting the pitchers' names
 getPitcherNames().then(function(names) {
 
   // add the options to the pitch name button
-  d3.select("#selectButton")
+  d3.select("#selectPitcher")
     .selectAll('myOptions')
     .data(names)
     .enter()
@@ -582,107 +620,9 @@ getPitcherNames().then(function(names) {
     .text(function (d) { return d; }) // text showed in the menu
     .attr("value", function (d) { return d; }) // corresponding value returned by the button
 
-  // Get the selected name
-  var selectedOption = d3.select('#selectButton').property("value")
-
-
   // STEP 2 - get the data for the selected name
-  // Get the data for the default pitcher
-  getPitcherData(selectedOption).then(function(pitchingData) {
-
-    // add the options to the pitch type selector
-    var pitch_types = d3.set(d3.values(pitchingData).map(function(d) {return d.pitch_type})).values()
-
-    d3.select("#selecttype")
-      .selectAll('myOptions')
-      .data(pitch_types)
-      .enter()
-      .append('option')
-      .text(function (d) { return d; }) // text showed in the menu
-      .attr("value", function (d) { return d; }) // corresponding value returned by the button
-
-
-    // STEP 3 - draw the axis and strike zone
-    drawStrikeZone(pitchingData)
-
-    // STEP 4 - wait for a new person
-    // When the button is changed, run the updateChart function
-    d3.select("#selectButton").on("change", function(d) {
-      // recover the option that has been chosen
-      var selectedOption = d3.select(this).property("value")
-
-      // GO AND GET NEW DATA
-      getPitcherData(selectedOption)
-        .then(function (data) {
-          drawStrikeZone(data)
-        })
-        // // STEP 5 - wait for a new pitch type
-        // // When the button is changed, run the updateChart function
-        // d3.select("#selecttype").on("change", function(d) {
-        //   // recover the option that has been chosen
-        //   var selectedType = d3.select('#selecttype').property("value")
-
-        //   d3.selectAll('circle').remove()
-
-
-
-        //       var new_dots = svg.append('g')
-        //         .selectAll("dot")
-        //         .data(data, function (d) {return d.pitch_type == selectedType})
-        //         .enter()
-        //         .append("circle")
-        //           .attr("cx", function (d) { return x(d.plate_x); } )
-        //           .attr("cy", function (d) { return y(d.plate_z); } )
-        //           .attr("r", 1.5)
-        //           .style("fill", "#12a3a2")
-        //     }) // end new pitch type
-
-
-
-
-        // //// the type selectors
-        // getPitcherData(selectedOption)
-        //   .then(function (data) {
-        //     // Add dots
-        //     //console.log(svg._groups[0])
-        //     d3.selectAll('circle').remove()
-
-
-
-
-        //     //console.log(data);
-        //     //console.log(d3.values(data).map(function(d) {return d.pitch_type}));
-
-        //     // add the options to the butto
-
-        //     var selectedType = d3.select('#selecttype').property("value")
-
-        //     console.log(selectedType)
-
-        //     // Add X axis
-        //     var x = d3.scaleLinear()
-        //       .domain([d3.min(data, function(c) { return c.plate_x})-3, d3.max(data, function(c) { return c.plate_x})    ])
-        //       .range([ 0, width ])
-        //     svg.select('g.x.axis').call(d3.axisBottom(x));
-
-        //     // Add Y axis
-        //     var y = d3.scaleLinear()
-        //       .domain([d3.min(data, function(c) { return c.plate_z}), d3.max(data, function(c) { return c.plate_z})    ])
-        //       .range([ height, 0])
-        //       svg.select('g.y.axis').call(d3.axisLeft(y));
-
-        //     var new_dots = svg.append('g')
-        //       .selectAll("dot")
-        //       .data(data, function (d) {return d.pitch_type == selectedType})
-        //       .enter()
-        //       .append("circle")
-        //         .attr("cx", function (d) { return x(d.plate_x); } )
-        //         .attr("cy", function (d) { return y(d.plate_z); } )
-        //         .attr("r", 1.5)
-        //         .style("fill", "#12a3a2")
-        //   })
-    })
-  })
+  // Get the selected name
+  generateVisualization()
 })
 
 
