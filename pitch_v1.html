@@ -232,6 +232,8 @@ function continuous(selector_id, colorscale) {
 };
 
 // function to draw strike zone
+var init = true;
+var x, y;
 function drawStrikeZone (pitchingData, zoneProbs) {
   if(svg) {
     d3.selectAll('svg').remove();
@@ -239,27 +241,19 @@ function drawStrikeZone (pitchingData, zoneProbs) {
   continuous("#my_dataviz", myColor)
   svg = initSvg()
 
-  // adds the x axis, y axis, and strike box
-
-  // Add X axis
-  var x = d3.scaleLinear()
+  if (init) {
+    x = d3.scaleLinear()
     .domain([d3.min(pitchingData, function(c) { return c.plate_x}) - 3,
       d3.max(pitchingData, function(c) { return c.plate_x})])
     .range([ 0, width ])
-  svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(x))
 
-  // Add Y axis
-  var y = d3.scaleLinear()
+    y = d3.scaleLinear()
     .domain([d3.min(pitchingData, function(c) { return c.plate_z}),
       d3.max(pitchingData, function(c) { return c.plate_z})])
     .range([ height, 0])
-  svg.append("g")
-    .attr("class", "y axis")
-    .call(d3.axisLeft(y))
 
+    init = false
+  }
 
   // PAINT STRIKE ZONE
 
