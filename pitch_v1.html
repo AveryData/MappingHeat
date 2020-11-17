@@ -13,6 +13,10 @@ div.tooltip {
   border-radius: 8px;
 }
 
+rect.selected {
+  fill: #00ff00 !important;
+}
+
 </style>
 
 
@@ -31,11 +35,8 @@ div.tooltip {
 <input type="range" min="55", max="110", step="1", value="90" id="selectSpeed"/>
 <output id="opacity">90 mph</output>
 <div id="my_dataviz"></div>
-<div style="display:inline-block; float:right" id="legend"></div>
-
-
-
-
+<div id="legend"></div>
+<div id="hitProbability" style="max-width: 100px; margin-top:25px; margin-left: 20px;"></div>
 <script>
 
 
@@ -234,6 +235,7 @@ function continuous(selector_id, colorscale) {
 // function to draw strike zone
 var init = true;
 var x, y;
+var curZoneProbs;
 function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
   if(svg) {
     d3.selectAll('svg').remove();
@@ -254,6 +256,7 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
 
     init = false
   }
+  curZoneProbs = zoneProbs
 
   // PAINT STRIKE ZONE
 
@@ -323,145 +326,213 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
 
 
   // Background sqaures
-
+  var zoneSquares = []
+  
   // Bottom Row
   var bl = svg.append("rect")
+    .attr('zone', 7)
     .attr("x", x(far_left))
     .attr("y", y(v_1))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['7']));
+  zoneSquares.push(bl)
 
   var bm = svg.append("rect")
+    .attr('zone', 8)
     .attr("x", x(h_1))
     .attr("y", y(v_1))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['8']));
+  zoneSquares.push(bm)
 
   var br = svg.append("rect")
+    .attr('zone', 9)
     .attr("x", x(h_2))
     .attr("y", y(v_1))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['9']));
-
+  zoneSquares.push(br)
 
   // Middle Row
   var ml = svg.append("rect")
+    .attr('zone', 4)
     .attr("x", x(far_left))
     .attr("y", y(v_2))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['4']));
+  zoneSquares.push(ml)
 
   var mm = svg.append("rect")
+    .attr('zone', 5)
     .attr("x", x(h_1))
     .attr("y", y(v_2))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['5']));
+  zoneSquares.push(mm)
 
   var mr = svg.append("rect")
+    .attr('zone', 6) 
     .attr("x", x(h_2))
     .attr("y", y(v_2))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['6']));
-
+  zoneSquares.push(mr)
 
   // top Row
   var tl = svg.append("rect")
+    .attr('zone', 1)
     .attr("x", x(far_left))
     .attr("y", y(top))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['1']));
+    .style("fill", myColor(zoneProbs['1']))
+  zoneSquares.push(tl)
 
   var tm = svg.append("rect")
+    .attr('zone', 2)
     .attr("x", x(h_1))
     .attr("y", y(top))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['2']));
+  zoneSquares.push(tm)
 
   var tr = svg.append("rect")
+    .attr('zone', 3)
     .attr("x", x(h_2))
     .attr("y", y(top))
     .attr("width", -x(far_left) + x(h_1))
     .attr("height",  -y(v_1)  + y(bottom))
     .style("fill", myColor(zoneProbs['3']));
-
-
+  zoneSquares.push(tr)
 
   // Outer zones
   // Bottom Left
   var z_13_1 = svg.append("rect")
+    .attr('zone', 13)
     .attr("x", x(far_left - outer_width) + 1)
     .attr("y", y(v_middle))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
     .style("fill", myColor(zoneProbs['13']));
+  zoneSquares.push(z_13_1)
 
   var z_13_2 = svg.append("rect")
+    .attr('zone', 13)
     .attr("x", x(far_left))
     .attr("y", y(bottom))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
     .style("fill", myColor(zoneProbs['13']));
+  zoneSquares.push(z_13_2)
 
-
-
-      // bottom right
+  // bottom right
   var z_14_1 = svg.append("rect")
+    .attr('zone', 14)
     .attr("x", x(far_right) - 1)
     .attr("y", y(v_middle))
     .attr("width", x(far_left) - x(far_left - outer_width))
     .attr("height",   y(outer_height))
     .style("fill", myColor(zoneProbs['14']));
-
+  zoneSquares.push(z_14_1)
 
   var z_14_2 = svg.append("rect")
+    .attr('zone', 14)
     .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
     .attr("y", y(bottom))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
     .style("fill", myColor(zoneProbs['14']));
-
+  zoneSquares.push(z_14_2)
 
 
       // top left
   var z_11_1 = svg.append("rect")
+    .attr('zone', 11)
     .attr("x", x(far_left - outer_width) + 1)
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
     .style("fill", myColor(zoneProbs['11']));
+  zoneSquares.push(z_11_1)
 
   var z_11_2 = svg.append("rect")
+    .attr('zone', 11)
     .attr("x", x(far_left))
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
     .style("fill", myColor(zoneProbs['11']));
-
+  zoneSquares.push(z_11_2)
 
 
   // top right
   var z_12_1 = svg.append("rect")
+    .attr('zone', 12)
     .attr("x", x(far_right) - 1)
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",x(far_left) - x(far_left - outer_width))
     .attr("height",  y(outer_height) )
     .style("fill", myColor(zoneProbs['12']));
+  zoneSquares.push(z_12_1)
 
 
   var z_12_2 = svg.append("rect")
+    .attr('zone', 12)
     .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
     .attr("y", y(v_middle) - y(outer_height))
     .attr("width",(x(h_middle) - x(far_left))/2)
     .attr("height", -y(v_middle) + y(outer_height) + y(top) )
     .style("fill", myColor(zoneProbs['12']));
+  zoneSquares.push(z_12_2)
+
+  // selected zone handlers
+  for (i = 0; i < zoneSquares.length; i++) {
+    zoneSquares[i].on('click', function(d) {
+      // clear text
+      d3.select('.zoneProb').text('')
+
+      // get clicked rect
+      var rect = d3.select(this)
+      var zone = rect.attr('zone')
+      if (rect.attr('class') === 'selected') {
+        if (rect.attr('zone') < 11 ) {
+          rect.attr('class', null)
+        } else {
+          d3.selectAll('rect').each(function() {
+            curRect = d3.select(this)
+            if (curRect.attr('zone') === zone) {
+              curRect.attr('class', null)
+            }
+          }) 
+        }
+      } else {
+        d3.selectAll('rect').attr('class', null)
+        
+        if (zone < 11) {
+          d3.select(this).attr('class', 'selected')
+        } else {
+          d3.selectAll('rect').each(function() {
+            curRect = d3.select(this)
+            if (curRect.attr('zone') === zone) {
+              curRect.attr('class', 'selected')
+            }
+          })
+        }
+
+
+        var zoneProb = curZoneProbs[zone]
+        var text = 'Hit Probability for Zone ' + zone + ': ' + zoneProb.toFixed(4)
+        d3.select('#hitProbability').text(text).attr('class', 'zoneProb')
+      }
+    })
+  }
 
   // MAIN strike zone outline BOX
   var main_box_stroke_with = 3
@@ -607,14 +678,17 @@ function generateVisualization (pitcherChanged) {
 }
 
 d3.select("#selectPitcher").on("change", function(d) {
+  d3.select('.zoneProb').text('')
   generateVisualization(true)
 })
 
 d3.select("#selectType").on("change", function(d) {
+  d3.select('.zoneProb').text('')
   generateVisualization(false)
 })
 
 d3.select("#selectSpeed").on("change", function(d) {
+  d3.select('.zoneProb').text('')
   generateVisualization(false)
 })
 
