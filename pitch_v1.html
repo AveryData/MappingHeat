@@ -157,7 +157,7 @@ function getZoneProbabilities (pitcher, pitch, speed) {
 
 // define color Map
 endColor = 0
-startColor = .4
+startColor = .3
 var myColor = d3.scaleSequential()
   .interpolator(d3.interpolateRdYlBu)
   .domain([startColor,endColor])
@@ -234,7 +234,7 @@ function continuous(selector_id, colorscale) {
 // function to draw strike zone
 var init = true;
 var x, y;
-function drawStrikeZone (pitchingData, zoneProbs) {
+function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
   if(svg) {
     d3.selectAll('svg').remove();
   }
@@ -507,16 +507,23 @@ function drawStrikeZone (pitchingData, zoneProbs) {
     .attr("y2", y(top));
 
 
+  var pitchesToPlot = pitchingData.filter(function(p) {
+    var xVal = x(p.plate_x)
+    var yVal = y(p.plate_z)
+    var inBounds = xVal >= 100 && xVal <= 300 && yVal >= 50 && yVal <= 300
+    return p.pitch_type === pitchType && inBounds
+  })
   // add pitch dots
   svg.append('g')
     .selectAll("dot")
-    .data(pitchingData)
+    .data(pitchesToPlot)
     .enter()
     .append("circle")
     .attr("cx", function (d) { return x(d.plate_x); } )
     .attr("cy", function (d) { return y(d.plate_z); } )
     .attr("r", 1.5)
-    .style("fill", "#010101")
+    .style("fill", "#FFFFFF")
+    .style('stroke', '#000000')
     .on("mouseover", function(d) {
       div.transition()
         .duration(50)
@@ -527,10 +534,13 @@ function drawStrikeZone (pitchingData, zoneProbs) {
         + 'Outcome: ' + d.description
         + "<br/>"
         + 'Speed: ' + d.release_speed
-
       )
+        .style('display', 'block')
         .style("left", (d3.event.pageX) + "px")
         .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", function(d) {
+      div.style('display', 'none')
     });
 
 // BASE BALL
@@ -591,7 +601,7 @@ function generateVisualization (pitcherChanged) {
     }
     getZoneProbabilities(selectedPitcher, selectedPitch, selectedSpeed)
       .then(function (zoneProbs) {
-        drawStrikeZone(pitchingData, zoneProbs)
+        drawStrikeZone(pitchingData, selectedPitch, zoneProbs)
       })
   })
 }
