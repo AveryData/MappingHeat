@@ -49,13 +49,17 @@ var margin = {top: 10, right: 30, bottom: 30, left: 60},
     height = 400 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
-var svg = d3.select("#my_dataviz")
+var svg;
+function initSvg () {
+  var svg = d3.select("#my_dataviz")
   .append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")");
+  return svg
+}
 
 
 var div = d3.select("body").append("div")
@@ -205,7 +209,7 @@ function continuous(selector_id, colorscale) {
     .tickSize(6)
     .ticks(8);
 
-  var svg = d3.select(selector_id)
+  var legSvg = d3.select(selector_id)
     .append("svg")
     .attr("height", (legendheight) + "px")
     .attr("width", (legendwidth) + "px")
@@ -213,8 +217,7 @@ function continuous(selector_id, colorscale) {
     .style("left", "0px")
     .style("top", "0px")
 
-  svg
-    .append("g")
+  legSvg.append("g")
     .attr("class", "axis")
     .attr("transform", "translate(" + (legendwidth - margin.left - margin.right + 3) + "," + (margin.top) + ")")
     .call(legendaxis);
@@ -227,13 +230,19 @@ function continuous(selector_id, colorscale) {
 
 
 // function to start strike zone
-function initializeStrikeZone (defaultPitcherData) {
+function drawStrikeZone (pitchingData) {
+  if(svg) {
+    d3.selectAll('svg').remove();
+  }
+  continuous("#my_dataviz", myColor)
+  svg = initSvg()
+
   // adds the x axis, y axis, and strike box
 
   // Add X axis
   var x = d3.scaleLinear()
-    .domain([d3.min(defaultPitcherData, function(c) { return c.plate_x}) - 3,
-      d3.max(defaultPitcherData, function(c) { return c.plate_x})])
+    .domain([d3.min(pitchingData, function(c) { return c.plate_x}) - 3,
+      d3.max(pitchingData, function(c) { return c.plate_x})])
     .range([ 0, width ])
   svg.append("g")
     .attr("class", "x axis")
@@ -242,8 +251,8 @@ function initializeStrikeZone (defaultPitcherData) {
 
   // Add Y axis
   var y = d3.scaleLinear()
-    .domain([d3.min(defaultPitcherData, function(c) { return c.plate_z}),
-      d3.max(defaultPitcherData, function(c) { return c.plate_z})])
+    .domain([d3.min(pitchingData, function(c) { return c.plate_z}),
+      d3.max(pitchingData, function(c) { return c.plate_z})])
     .range([ height, 0])
   svg.append("g")
     .attr("class", "y axis")
@@ -515,7 +524,7 @@ var outer_width = h_middle/1.8
   // add pitch dots
   svg.append('g')
     .selectAll("dot")
-    .data(defaultPitcherData)
+    .data(pitchingData)
     .enter()
     .append("circle")
       .attr("cx", function (d) { return x(d.plate_x); } )
@@ -597,13 +606,13 @@ getPitcherNames().then(function(names) {
 
   // STEP 2 - get the data for the selected name
   // Get the data for the default pitcher
-  getPitcherData(selectedOption).then(function(defaultPitcherData) {
+  getPitcherData(selectedOption).then(function(pitchingData) {
 
 
-console.log(defaultPitcherData);
+console.log(pitchingData);
 
     // add the options to the pitch type selector
-    var pitch_types = d3.set(d3.values(defaultPitcherData).map(function(d) {return d.pitch_type})).values()
+    var pitch_types = d3.set(d3.values(pitchingData).map(function(d) {return d.pitch_type})).values()
 
     d3.select("#selecttype")
       .selectAll('myOptions')
@@ -615,7 +624,7 @@ console.log(defaultPitcherData);
 
 
     // STEP 3 - draw the axis and strike zone
-    initializeStrikeZone(defaultPitcherData)
+    drawStrikeZone(pitchingData)
 
 
 
@@ -629,38 +638,7 @@ console.log(defaultPitcherData);
       // GO AND GET NEW DATA
       getPitcherData(selectedOption)
         .then(function (data) {
-          // Add dots
-          //console.log(svg._groups[0])
-          d3.selectAll('circle').remove()
-
-          var selectedType = d3.select('#selecttype').property("value")
-
-          var new_dots = svg.append('g')
-            .selectAll("dot")
-            .data(data, function (d) {return d.pitch_type == selectedType})
-            .enter()
-            .append("circle")
-              .attr("cx", function (d) { return x(d.plate_x); } )
-              .attr("cy", function (d) { return y(d.plate_z); } )
-              .attr("r", 1.5)
-              .style("fill", "#12a3a2")
-              .on("mouseover", function(d) {
-               div.transition()
-                 .duration(50)
-                 .style("opacity", .9);
-               div.html(
-                 'Pitch Date: ' + d.game_date
-                 + "<br/>"
-                 + 'Outcome: ' + d.description
-                 + "<br/>"
-                 + 'Speed: ' + d.release_speed
-
-               )
-
-                 .style("left", (d3.event.pageX) + "px")
-                 .style("top", (d3.event.pageY - 28) + "px");
-               });
-
+          drawStrikeZone(data)
         })
 
 
