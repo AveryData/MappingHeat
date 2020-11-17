@@ -158,7 +158,7 @@ function getZoneProbabilities (pitcher, pitch, speed) {
 
 // define color Map
 endColor = 0
-startColor = .3
+startColor = .2
 var myColor = d3.scaleSequential()
   .interpolator(d3.interpolateRdYlBu)
   .domain([startColor,endColor])
@@ -528,7 +528,7 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
 
 
         var zoneProb = curZoneProbs[zone]
-        var text = 'Hit Probability for Zone ' + zone + ': ' + zoneProb.toFixed(4)
+        var text = 'Hit Probability for Zone ' + zone + ': ' + (zoneProb * 100).toFixed(6) + "%"
         d3.select('#hitProbability').text(text).attr('class', 'zoneProb')
       }
     })
