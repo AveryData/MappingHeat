@@ -196,7 +196,6 @@ function continuous(selector_id, colorscale) {
     .range([1, legendheight - margin.top - margin.bottom])
     .domain(colorscale.domain());
 
-  // image data hackery based on http://bl.ocks.org/mbostock/048d21cf747371b11884f75ad896e5a5
   var image = ctx.createImageData(1, legendheight);
   d3.range(legendheight).forEach(function(i) {
     var c = d3.rgb(colorscale(legendscale.invert(i)));
@@ -206,16 +205,7 @@ function continuous(selector_id, colorscale) {
     image.data[4*i + 3] = 255;
   });
   ctx.putImageData(image, 0, 0);
-
-  // A simpler way to do the above, but possibly slower. keep in mind the legend width is stretched because the width attr of the canvas is 1
-  // See http://stackoverflow.com/questions/4899799/whats-the-best-way-to-set-a-single-pixel-in-an-html5-canvas
-  /*
-  d3.range(legendheight).forEach(function(i) {
-    ctx.fillStyle = colorscale(legendscale.invert(i));
-    ctx.fillRect(0,i,1,1);
-  });
-  */
-
+  
   var legendaxis = d3.axisRight()
     .scale(legendscale)
     .tickSize(6)
@@ -262,7 +252,6 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
   curZoneProbs = zoneProbs
 
   // PAINT STRIKE ZONE
-
 
   // Constants for the strike zone
   var far_left = -1;
@@ -517,7 +506,6 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
         }
       } else {
         d3.selectAll('rect').attr('class', null)
-        
         if (zone < 11) {
           d3.select(this).attr('class', 'selected')
         } else {
@@ -528,8 +516,6 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
             }
           })
         }
-
-
         var zoneProb = curZoneProbs[zone]
         var text = 'Hit Probability for Zone ' + zone + ': ' + (zoneProb * 100).toFixed(6) + "%"
         d3.select('#hitProbability').text(text).attr('class', 'zoneProb')
@@ -616,34 +602,6 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
     .on("mouseout", function(d) {
       div.style('display', 'none')
     });
-
-// BASE BALL
-    // add baseball
-    // var baseball = svg.append("circle")
-    //   .attr("cx", x(0))
-    //   .attr("cy",y(2.25))
-    //   .attr("fx",0)
-    //   .attr("fy",0)
-    //   .attr("r",15)
-    //   .style("fill", "#A1A1A1")
-    //
-    //   // Move the baseball
-    //   var dragHandler = d3.drag()
-    //       .on('drag', dragged)
-    //       // .on('start', dragstarted);
-    //
-    //   dragHandler(baseball);
-    //
-    //   function dragged() {
-    //       var current = d3.select(this);
-    //       current
-    //           .attr('cx', d3.event.x)
-    //           .attr('cy', d3.event.y);
-    //   }
-
-
-
-
 
 } // End intialize
 
