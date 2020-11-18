@@ -16,6 +16,11 @@ div.tooltip {
 rect.selected {
   fill: #00ff00 !important;
 }
+
+body.scaled {
+  transform: scale(1.75);
+  transform-origin: 0 0;
+}
 </style>
 
 
@@ -37,6 +42,10 @@ rect.selected {
 <div id="legend"></div>
 <div id="hitProbability" style="max-width: 100px; margin-top:25px; margin-left: 20px;"></div>
 <script>
+
+// Scale viz
+var scale = 1.75
+d3.select('body').attr('class', 'scaled')
 
 // SETTING SVG and Canvas DIMENSIONS
 // set the dimensions and margins of the graph
@@ -601,8 +610,8 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
         + 'Speed: ' + d.release_speed
       )
         .style('display', 'block')
-        .style("left", (d3.event.pageX) + "px")
-        .style("top", (d3.event.pageY - 28) + "px");
+        .style("left", (d3.event.pageX / scale) + "px")
+        .style("top", (d3.event.pageY - (28 * scale)) / scale + "px");
     })
     .on("mouseout", function(d) {
       div.style('display', 'none')
