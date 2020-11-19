@@ -13,7 +13,7 @@ pitching_data = pd.DataFrame()
 
 @bp.route('/pitchers/names', methods=['GET'])
 def pitcher_names():
-    name_query = "SELECT DISTINCT player_name FROM pitching_data"
+    name_query = "SELECT DISTINCT player_name FROM pitching_data ORDER BY player_name ASC"
     names = [row[0] for row in get_db().execute(name_query).fetchall()]
 
     return json.dumps(names)
@@ -48,11 +48,16 @@ def pitch_feature():
     return json.dumps(pitch_data)
 
 @bp.route('/predict', methods=['GET'])
-def predict_pitch():
+def predict_zones():
     name = [request.args.get('name')]
     pitch = [request.args.get('pitch')]
     speed = [request.args.get('speed', type=float)]
-    zone = [request.args.get('zone')]
 
-    result = predict({ 'player_name': name, 'pitch_type': pitch, 'release_speed': speed, 'zone': zone})
-    return json.dumps({'hit_prediction': result.item(0) })
+    results = {}
+    for i in range(1, 15):
+        if i != 10:
+            zone = str(float(i))
+            prediction = predict({'player_name': name, 'pitch_type': pitch, 'release_speed': speed, 'norm_zone': zone})
+            results[i] = prediction.item(1)
+
+    return json.dumps(results)

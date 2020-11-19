@@ -13,6 +13,14 @@ div.tooltip {
   border-radius: 8px;
 }
 
+rect.selected {
+  fill: #00ff00 !important;
+}
+
+body.scaled {
+  transform: scale(1.75);
+  transform-origin: 0 0;
+}
 </style>
 
 
@@ -26,21 +34,18 @@ div.tooltip {
 <body>
 
 <h3>Mapping Heat</h1>
-<select id="selectButton"></select>
-<select id="selecttype"></select>
-<input type="range" min="10", max="110", step="5", value="90" id="selectSpeed"/>
+<select id="selectPitcher"></select>
+<select id="selectType"></select>
+<input type="range" min="55", max="110", step="1", value="90" id="selectSpeed"/>
 <output id="opacity">90 mph</output>
 <div id="my_dataviz"></div>
-<div style="display:inline-block; float:right" id="legend"></div>
-
-
-
-
+<div id="legend"></div>
+<div id="hitProbability" style="max-width: 100px; margin-top:25px; margin-left: 20px;"></div>
 <script>
 
-
-
-
+// Scale viz
+var scale = 1.75
+d3.select('body').attr('class', 'scaled')
 
 // SETTING SVG and Canvas DIMENSIONS
 // set the dimensions and margins of the graph
@@ -49,23 +54,25 @@ var margin = {top: 10, right: 30, bottom: 30, left: 60},
     height = 400 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
-var svg = d3.select("#my_dataviz")
-  .append("svg")
+var svg;
+function initSvg () {
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
-  .append("g")
+    .append("g")
     .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
-
+      "translate(" + margin.left + "," + margin.top + ")");
+  return svg
+}
 
 var div = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
+  .attr("class", "tooltip")
+  .style("opacity", 0);
 
 // Speed selector
 d3.select("input[type=range]#selectSpeed").on("input", function() {
-  var speed;
-  speed = this.value;
+  var speed = this.value;
   d3.select("output#opacity").text(d3.format(".0f")(speed) + " mph");
   return d3.selectAll("circle.points").attr("opacity", speed);
 });
@@ -134,18 +141,27 @@ function getPitcherNames () {
     }
   })
 }
+
+// get zone probabalities
+function getZoneProbabilities (pitcher, pitch, speed) {
+  var qs = '?name=' + pitcher + "&pitch=" + pitch + "&speed=" + speed
+  return $.get({
+    url: baseApiUrl + '/stats/predict' + encodeURI(qs),
+    dataType: 'json',
+    success: function (zoneProbs) {
+      return zoneProbs
+    },
+    error: function (error) {
+      console.error('Error generating zone probabilities', error)
+    }
+  })
+}
 // End code to go get data
-
-
-
-
-
-
 
 
 // define color Map
 endColor = 0
-startColor = .4
+startColor = .2
 var myColor = d3.scaleSequential()
   .interpolator(d3.interpolateRdYlBu)
   .domain([startColor,endColor])
@@ -180,7 +196,6 @@ function continuous(selector_id, colorscale) {
     .range([1, legendheight - margin.top - margin.bottom])
     .domain(colorscale.domain());
 
-  // image data hackery based on http://bl.ocks.org/mbostock/048d21cf747371b11884f75ad896e5a5
   var image = ctx.createImageData(1, legendheight);
   d3.range(legendheight).forEach(function(i) {
     var c = d3.rgb(colorscale(legendscale.invert(i)));
@@ -190,22 +205,13 @@ function continuous(selector_id, colorscale) {
     image.data[4*i + 3] = 255;
   });
   ctx.putImageData(image, 0, 0);
-
-  // A simpler way to do the above, but possibly slower. keep in mind the legend width is stretched because the width attr of the canvas is 1
-  // See http://stackoverflow.com/questions/4899799/whats-the-best-way-to-set-a-single-pixel-in-an-html5-canvas
-  /*
-  d3.range(legendheight).forEach(function(i) {
-    ctx.fillStyle = colorscale(legendscale.invert(i));
-    ctx.fillRect(0,i,1,1);
-  });
-  */
-
+  
   var legendaxis = d3.axisRight()
     .scale(legendscale)
     .tickSize(6)
     .ticks(8);
 
-  var svg = d3.select(selector_id)
+  var legSvg = d3.select(selector_id)
     .append("svg")
     .attr("height", (legendheight) + "px")
     .attr("width", (legendwidth) + "px")
@@ -213,71 +219,62 @@ function continuous(selector_id, colorscale) {
     .style("left", "0px")
     .style("top", "0px")
 
-  svg
-    .append("g")
+  legSvg.append("g")
     .attr("class", "axis")
     .attr("transform", "translate(" + (legendwidth - margin.left - margin.right + 3) + "," + (margin.top) + ")")
     .call(legendaxis);
 };
 
+// function to draw strike zone
+var init = true;
+var x, y;
+var curZoneProbs;
+function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
+  if(svg) {
+    d3.selectAll('svg').remove();
+  }
+  continuous("#my_dataviz", myColor)
+  svg = initSvg()
 
-
-
-
-
-
-// function to start strike zone
-function initializeStrikeZone (defaultPitcherData) {
-  // adds the x axis, y axis, and strike box
-
-  // Add X axis
-  var x = d3.scaleLinear()
-    .domain([d3.min(defaultPitcherData, function(c) { return c.plate_x}) - 3,
-      d3.max(defaultPitcherData, function(c) { return c.plate_x})])
+  if (init) {
+    x = d3.scaleLinear()
+    .domain([d3.min(pitchingData, function(c) { return c.plate_x}) - 3,
+      d3.max(pitchingData, function(c) { return c.plate_x})])
     .range([ 0, width ])
-  svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(d3.axisBottom(x))
 
-  // Add Y axis
-  var y = d3.scaleLinear()
-    .domain([d3.min(defaultPitcherData, function(c) { return c.plate_z}),
-      d3.max(defaultPitcherData, function(c) { return c.plate_z})])
+    y = d3.scaleLinear()
+    .domain([d3.min(pitchingData, function(c) { return c.plate_z}),
+      d3.max(pitchingData, function(c) { return c.plate_z})])
     .range([ height, 0])
-  svg.append("g")
-    .attr("class", "y axis")
-    .call(d3.axisLeft(y))
+
+    init = false
+  }
+  curZoneProbs = zoneProbs
+
+  // PAINT STRIKE ZONE
+
+  // Constants for the strike zone
+  var far_left = -1;
+  var far_right = 1;
+  var top = 3.5;
+  var bottom = 1;
+
+  var h_1 = far_left + (far_right - far_left)/3
+  var h_2 = far_left + 2*(far_right - far_left)/3
+
+  var v_1 = bottom + (top - bottom)/3
+  var v_2 = bottom + 2*(top - bottom)/3
+
+  var v_middle = (top-bottom)/2 + bottom
+  var h_middle = (far_right - far_left)/2
+
+  var outer_height = v_middle/.8
+  var outer_width = h_middle/1.8
 
 
-// PAINT STRIKE ZONE
-
-
-// Constants for the strike zone
-var far_left = -1;
-var far_right = 1;
-var top = 3.5;
-var bottom = 1;
-
-var h_1 = far_left + (far_right - far_left)/3
-var h_2 = far_left + 2*(far_right - far_left)/3
-
-var v_1 = bottom + (top - bottom)/3
-var v_2 = bottom + 2*(top - bottom)/3
-
-var v_middle = (top-bottom)/2 + bottom
-var h_middle = (far_right - far_left)/2
-
-var outer_height = v_middle/.8
-var outer_width = h_middle/1.8
-
-
-
-
-
-// Pain the inside borders (currently getting painted over)
-    // h_1
-    svg.append('line')
+  // Pain the inside borders (currently getting painted over)
+  // h_1
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -287,8 +284,8 @@ var outer_width = h_middle/1.8
     .attr("y2", y(top));
 
 
-    // h_2
-    svg.append('line')
+  // h_2
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -297,8 +294,8 @@ var outer_width = h_middle/1.8
     .attr("x2", x(h_2))
     .attr("y2", y(top));
 
-    // v_1
-    svg.append('line')
+  // v_1
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -309,8 +306,8 @@ var outer_width = h_middle/1.8
 
 
 
-    // v_2
-    svg.append('line')
+  // v_2
+  svg.append('line')
     .style("stroke", "grey")
     .style("stroke-width", .3)
     .style("stroke-dasharray", ("5, 3"))
@@ -320,270 +317,348 @@ var outer_width = h_middle/1.8
     .attr("y2", y(v_2));
 
 
-    // Background sqaures
+  // Background sqaures
+  var zoneSquares = []
+  
+  // Bottom Row
+  var bl = svg.append("rect")
+    .attr('zone', 7)
+    .attr("x", x(far_left))
+    .attr("y", y(v_1))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['7']));
+  zoneSquares.push(bl)
 
-    // Bottom Row
-    var bl = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(v_1))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.33));
+  var bm = svg.append("rect")
+    .attr('zone', 8)
+    .attr("x", x(h_1))
+    .attr("y", y(v_1))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['8']));
+  zoneSquares.push(bm)
 
-    var bm = svg.append("rect")
-        .attr("x", x(h_1))
-        .attr("y", y(v_1))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.13));
+  var br = svg.append("rect")
+    .attr('zone', 9)
+    .attr("x", x(h_2))
+    .attr("y", y(v_1))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['9']));
+  zoneSquares.push(br)
 
-    var br = svg.append("rect")
-        .attr("x", x(h_2))
-        .attr("y", y(v_1))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.03));
+  // Middle Row
+  var ml = svg.append("rect")
+    .attr('zone', 4)
+    .attr("x", x(far_left))
+    .attr("y", y(v_2))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['4']));
+  zoneSquares.push(ml)
 
+  var mm = svg.append("rect")
+    .attr('zone', 5)
+    .attr("x", x(h_1))
+    .attr("y", y(v_2))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['5']));
+  zoneSquares.push(mm)
 
-    // Middle Row
-    var ml = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(v_2))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.12));
+  var mr = svg.append("rect")
+    .attr('zone', 6) 
+    .attr("x", x(h_2))
+    .attr("y", y(v_2))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['6']));
+  zoneSquares.push(mr)
 
-    var mm = svg.append("rect")
-        .attr("x", x(h_1))
-        .attr("y", y(v_2))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.1));
+  // top Row
+  var tl = svg.append("rect")
+    .attr('zone', 1)
+    .attr("x", x(far_left))
+    .attr("y", y(top))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['1']))
+  zoneSquares.push(tl)
 
-    var mr = svg.append("rect")
-        .attr("x", x(h_2))
-        .attr("y", y(v_2))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.22));
+  var tm = svg.append("rect")
+    .attr('zone', 2)
+    .attr("x", x(h_1))
+    .attr("y", y(top))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['2']));
+  zoneSquares.push(tm)
 
+  var tr = svg.append("rect")
+    .attr('zone', 3)
+    .attr("x", x(h_2))
+    .attr("y", y(top))
+    .attr("width", -x(far_left) + x(h_1))
+    .attr("height",  -y(v_1)  + y(bottom))
+    .style("fill", myColor(zoneProbs['3']));
+  zoneSquares.push(tr)
 
-    // top Row
-    var tl = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(top))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.23));
+  // Outer zones
+  // Bottom Left
+  var z_13_1 = svg.append("rect")
+    .attr('zone', 13)
+    .attr("x", x(far_left - outer_width) + 1)
+    .attr("y", y(v_middle))
+    .attr("width",x(far_left) - x(far_left - outer_width))
+    .attr("height",  y(outer_height) )
+    .style("fill", myColor(zoneProbs['13']));
+  zoneSquares.push(z_13_1)
 
-    var tm = svg.append("rect")
-        .attr("x", x(h_1))
-        .attr("y", y(top))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.07));
+  var z_13_2 = svg.append("rect")
+    .attr('zone', 13)
+    .attr("x", x(far_left))
+    .attr("y", y(bottom))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(zoneProbs['13']));
+  zoneSquares.push(z_13_2)
 
-    var tr = svg.append("rect")
-        .attr("x", x(h_2))
-        .attr("y", y(top))
-        .attr("width", -x(far_left) + x(h_1))
-        .attr("height",  -y(v_1)  + y(bottom))
-        .style("fill", myColor(.23));
+  // bottom right
+  var z_14_1 = svg.append("rect")
+    .attr('zone', 14)
+    .attr("x", x(far_right) - 1)
+    .attr("y", y(v_middle))
+    .attr("width", x(far_left) - x(far_left - outer_width))
+    .attr("height",   y(outer_height))
+    .style("fill", myColor(zoneProbs['14']));
+  zoneSquares.push(z_14_1)
 
-
-
-// Outer zones
-        // Bottom Left
-    var z_13_1 = svg.append("rect")
-        .attr("x", x(far_left - outer_width))
-        .attr("y", y(v_middle))
-        .attr("width",x(far_left) - x(far_left - outer_width))
-        .attr("height",  y(outer_height) )
-        .style("fill", myColor(.13));
-
-    var z_11_2 = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(bottom))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.13));
-
-
-
-        // bottom right
-    var z_14_1 = svg.append("rect")
-        .attr("x", x(far_right))
-        .attr("y", y(v_middle))
-        .attr("width", x(far_left) - x(far_left - outer_width))
-        .attr("height",   y(outer_height))
-        .style("fill", myColor(.04));
-
-
-    var z_14_2 = svg.append("rect")
-        .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
-        .attr("y", y(bottom))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.04));
-
-
-
-        // top left
-    var z_11_1 = svg.append("rect")
-        .attr("x", x(far_left - outer_width))
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",x(far_left) - x(far_left - outer_width))
-        .attr("height",  y(outer_height) )
-        .style("fill", myColor(.15));
-
-    var z_11_2 = svg.append("rect")
-        .attr("x", x(far_left))
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.15));
-
-
-
-// top right
-    var z_12_1 = svg.append("rect")
-        .attr("x", x(far_right))
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",x(far_left) - x(far_left - outer_width))
-        .attr("height",  y(outer_height) )
-        .style("fill", myColor(.2));
+  var z_14_2 = svg.append("rect")
+    .attr('zone', 14)
+    .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
+    .attr("y", y(bottom))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(zoneProbs['14']));
+  zoneSquares.push(z_14_2)
 
 
-    var z_12_2 = svg.append("rect")
-        .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
-        .attr("y", y(v_middle) - y(outer_height))
-        .attr("width",(x(h_middle) - x(far_left))/2)
-        .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-        .style("fill", myColor(.2));
+      // top left
+  var z_11_1 = svg.append("rect")
+    .attr('zone', 11)
+    .attr("x", x(far_left - outer_width) + 1)
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",x(far_left) - x(far_left - outer_width))
+    .attr("height",  y(outer_height) )
+    .style("fill", myColor(zoneProbs['11']));
+  zoneSquares.push(z_11_1)
+
+  var z_11_2 = svg.append("rect")
+    .attr('zone', 11)
+    .attr("x", x(far_left))
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(zoneProbs['11']));
+  zoneSquares.push(z_11_2)
 
 
+  // top right
+  var z_12_1 = svg.append("rect")
+    .attr('zone', 12)
+    .attr("x", x(far_right) - 1)
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",x(far_left) - x(far_left - outer_width))
+    .attr("height",  y(outer_height) )
+    .style("fill", myColor(zoneProbs['12']));
+  zoneSquares.push(z_12_1)
 
 
+  var z_12_2 = svg.append("rect")
+    .attr('zone', 12)
+    .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
+    .attr("y", y(v_middle) - y(outer_height))
+    .attr("width",(x(h_middle) - x(far_left))/2)
+    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
+    .style("fill", myColor(zoneProbs['12']));
+  zoneSquares.push(z_12_2)
+
+  // selected zone handlers
+  for (i = 0; i < zoneSquares.length; i++) {
+    zoneSquares[i].on('click', function(d) {
+      // clear text
+      d3.select('.zoneProb').text('')
+
+      // get clicked rect
+      var rect = d3.select(this)
+      var zone = rect.attr('zone')
+      if (rect.attr('class') === 'selected') {
+        if (rect.attr('zone') < 11 ) {
+          rect.attr('class', null)
+        } else {
+          d3.selectAll('rect').each(function() {
+            curRect = d3.select(this)
+            if (curRect.attr('zone') === zone) {
+              curRect.attr('class', null)
+            }
+          }) 
+        }
+      } else {
+        d3.selectAll('rect').attr('class', null)
+        if (zone < 11) {
+          d3.select(this).attr('class', 'selected')
+        } else {
+          d3.selectAll('rect').each(function() {
+            curRect = d3.select(this)
+            if (curRect.attr('zone') === zone) {
+              curRect.attr('class', 'selected')
+            }
+          })
+        }
+        var zoneProb = curZoneProbs[zone]
+        var text = 'Hit Probability for Zone ' + zone + ': ' + (zoneProb * 100).toFixed(6) + "%"
+        d3.select('#hitProbability').text(text).attr('class', 'zoneProb')
+      }
+    })
+  }
+
+  // MAIN strike zone outline BOX
+  var main_box_stroke_with = 3
+
+  // top
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_left))
+    .attr("y1", y(top))
+    .attr("x2", x(far_right))
+    .attr("y2", y(top));
+
+  // bottom
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_left))
+    .attr("y1", y(bottom))
+    .attr("x2", x(far_right))
+    .attr("y2", y(bottom));
+
+  // left
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_left))
+    .attr("y1", y(bottom))
+    .attr("x2", x(far_left))
+    .attr("y2", y(top));
+
+  // right
+  svg.append('line')
+    .style("stroke", "grey")
+    .style("stroke-width", main_box_stroke_with)
+    .style("stroke-dasharray", ("10, 8"))
+    .attr("x1", x(far_right))
+    .attr("y1", y(bottom))
+    .attr("x2", x(far_right))
+    .attr("y2", y(top));
 
 
-
-
-        // MAIN strike zone outline BOX
-        var main_box_stroke_with = 3
-
-        // top
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_left))
-        .attr("y1", y(top))
-        .attr("x2", x(far_right))
-        .attr("y2", y(top));
-
-        // bottom
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_left))
-        .attr("y1", y(bottom))
-        .attr("x2", x(far_right))
-        .attr("y2", y(bottom));
-
-        // left
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_left))
-        .attr("y1", y(bottom))
-        .attr("x2", x(far_left))
-        .attr("y2", y(top));
-
-        // right
-        svg.append('line')
-        .style("stroke", "grey")
-        .style("stroke-width", main_box_stroke_with)
-        .style("stroke-dasharray", ("10, 8"))
-        .attr("x1", x(far_right))
-        .attr("y1", y(bottom))
-        .attr("x2", x(far_right))
-        .attr("y2", y(top));
-
-
+  var pitchesToPlot = pitchingData.filter(function(p) {
+    var xVal = x(p.plate_x)
+    var yVal = y(p.plate_z)
+    var inBounds = xVal >= 100 && xVal <= 300 && yVal >= 50 && yVal <= 300
+    return p.pitch_type === pitchType && inBounds
+  })
   // add pitch dots
   svg.append('g')
     .selectAll("dot")
-    .data(defaultPitcherData)
+    .data(pitchesToPlot)
     .enter()
     .append("circle")
-      .attr("cx", function (d) { return x(d.plate_x); } )
-      .attr("cy", function (d) { return y(d.plate_z); } )
-      .attr("r", 1.5)
-      .style("fill", "#010101")
-      .on("mouseover", function(d) {
-       div.transition()
-         .duration(50)
-         .style("opacity", .9);
-       div.html(
-         'Pitch Date: ' + d.game_date
-         + "<br/>"
-         + 'Outcome: ' + d.description
-         + "<br/>"
-         + 'Speed: ' + d.release_speed
-
-       )
-
-         .style("left", (d3.event.pageX) + "px")
-         .style("top", (d3.event.pageY - 28) + "px");
-       });
-
-// BASE BALL
-    // add baseball
-    // var baseball = svg.append("circle")
-    //   .attr("cx", x(0))
-    //   .attr("cy",y(2.25))
-    //   .attr("fx",0)
-    //   .attr("fy",0)
-    //   .attr("r",15)
-    //   .style("fill", "#A1A1A1")
-    //
-    //   // Move the baseball
-    //   var dragHandler = d3.drag()
-    //       .on('drag', dragged)
-    //       // .on('start', dragstarted);
-    //
-    //   dragHandler(baseball);
-    //
-    //   function dragged() {
-    //       var current = d3.select(this);
-    //       current
-    //           .attr('cx', d3.event.x)
-    //           .attr('cy', d3.event.y);
-    //   }
-
-
-
-
+    .attr("cx", function (d) { return x(d.plate_x); } )
+    .attr("cy", function (d) { return y(d.plate_z); } )
+    .attr("r", 1.5)
+    .style("fill", "#FFFFFF")
+    .style('stroke', '#000000')
+    .on("mouseover", function(d) {
+      div.transition()
+        .duration(50)
+        .style("opacity", .9);
+      div.html(
+        'Pitch Date: ' + d.game_date
+        + "<br/>"
+        + 'Outcome: ' + d.description
+        + "<br/>"
+        + 'Speed: ' + d.release_speed
+      )
+        .style('display', 'block')
+        .style("left", (d3.event.pageX / scale) + "px")
+        .style("top", (d3.event.pageY - (28 * scale)) / scale + "px");
+    })
+    .on("mouseout", function(d) {
+      div.style('display', 'none')
+    });
 
 } // End intialize
 
+// set pitch type selector based on pitcher data
+function setPitchTypes (pitchingData) {
+  var pitchTypes = d3.set(d3.values(pitchingData).map(function(d) {return d.pitch_type})).values()
+  d3.select("#selectType")
+    .selectAll('option')
+    .remove()
+  d3.select("#selectType")
+    .selectAll('myOptions')
+    .data(pitchTypes)
+    .enter()
+    .append('option')
+    .text(function (d) { return d; }) // text showed in the menu
+    .attr("value", function (d) { return d; }) // corresponding value returned by the button 
+}
 
+// generate visualization based on current input values
+function generateVisualization (pitcherChanged) {
+  var selectedPitcher = d3.select('#selectPitcher').property("value")
+  var selectedSpeed = d3.select('#selectSpeed').property('value')
 
+  var selectedPitch = d3.select('#selectType').property('value')
+  getPitcherData(selectedPitcher).then(function (pitchingData) {
+    if (pitcherChanged) {
+      setPitchTypes(pitchingData)
+      selectedPitch = d3.select('#selectType').property('value')
+    }
+    getZoneProbabilities(selectedPitcher, selectedPitch, selectedSpeed)
+      .then(function (zoneProbs) {
+        drawStrikeZone(pitchingData, selectedPitch, zoneProbs)
+      })
+  })
+}
 
+d3.select("#selectPitcher").on("change", function(d) {
+  d3.select('.zoneProb').text('')
+  generateVisualization(true)
+})
 
+d3.select("#selectType").on("change", function(d) {
+  d3.select('.zoneProb').text('')
+  generateVisualization(false)
+})
 
-
-
-
+d3.select("#selectSpeed").on("change", function(d) {
+  d3.select('.zoneProb').text('')
+  generateVisualization(false)
+})
 
 // STEP 1
 // Start by getting the pitchers' names
 getPitcherNames().then(function(names) {
 
   // add the options to the pitch name button
-  d3.select("#selectButton")
+  d3.select("#selectPitcher")
     .selectAll('myOptions')
     .data(names)
     .enter()
@@ -591,149 +666,9 @@ getPitcherNames().then(function(names) {
     .text(function (d) { return d; }) // text showed in the menu
     .attr("value", function (d) { return d; }) // corresponding value returned by the button
 
-  // Get the selected name
-  var selectedOption = d3.select('#selectButton').property("value")
-
-
   // STEP 2 - get the data for the selected name
-  // Get the data for the default pitcher
-  getPitcherData(selectedOption).then(function(defaultPitcherData) {
-
-
-console.log(defaultPitcherData);
-
-    // add the options to the pitch type selector
-    var pitch_types = d3.set(d3.values(defaultPitcherData).map(function(d) {return d.pitch_type})).values()
-
-    d3.select("#selecttype")
-      .selectAll('myOptions')
-      .data(pitch_types)
-      .enter()
-      .append('option')
-      .text(function (d) { return d; }) // text showed in the menu
-      .attr("value", function (d) { return d; }) // corresponding value returned by the button
-
-
-    // STEP 3 - draw the axis and strike zone
-    initializeStrikeZone(defaultPitcherData)
-
-
-
-
-    // STEP 4 - wait for a new person
-    // When the button is changed, run the updateChart function
-    d3.select("#selectButton").on("change", function(d) {
-      // recover the option that has been chosen
-      var selectedOption = d3.select(this).property("value")
-
-      // GO AND GET NEW DATA
-      getPitcherData(selectedOption)
-        .then(function (data) {
-          // Add dots
-          //console.log(svg._groups[0])
-          d3.selectAll('circle').remove()
-
-          var selectedType = d3.select('#selecttype').property("value")
-
-          var new_dots = svg.append('g')
-            .selectAll("dot")
-            .data(data, function (d) {return d.pitch_type == selectedType})
-            .enter()
-            .append("circle")
-              .attr("cx", function (d) { return x(d.plate_x); } )
-              .attr("cy", function (d) { return y(d.plate_z); } )
-              .attr("r", 1.5)
-              .style("fill", "#12a3a2")
-              .on("mouseover", function(d) {
-               div.transition()
-                 .duration(50)
-                 .style("opacity", .9);
-               div.html(
-                 'Pitch Date: ' + d.game_date
-                 + "<br/>"
-                 + 'Outcome: ' + d.description
-                 + "<br/>"
-                 + 'Speed: ' + d.release_speed
-
-               )
-
-                 .style("left", (d3.event.pageX) + "px")
-                 .style("top", (d3.event.pageY - 28) + "px");
-               });
-
-        })
-
-
-
-        // STEP 5 - wait for a new pitch type
-        // When the button is changed, run the updateChart function
-        d3.select("#selecttype").on("change", function(d) {
-          // recover the option that has been chosen
-          var selectedType = d3.select('#selecttype').property("value")
-
-          d3.selectAll('circle').remove()
-
-
-
-              var new_dots = svg.append('g')
-                .selectAll("dot")
-                .data(data, function (d) {return d.pitch_type == selectedType})
-                .enter()
-                .append("circle")
-                  .attr("cx", function (d) { return x(d.plate_x); } )
-                  .attr("cy", function (d) { return y(d.plate_z); } )
-                  .attr("r", 1.5)
-                  .style("fill", "#12a3a2")
-            }) // end new pitch type
-
-
-
-
-        //// the type selectors
-        getPitcherData(selectedOption)
-          .then(function (data) {
-            // Add dots
-            //console.log(svg._groups[0])
-            d3.selectAll('circle').remove()
-
-
-
-
-            //console.log(data);
-            //console.log(d3.values(data).map(function(d) {return d.pitch_type}));
-
-            // add the options to the butto
-
-            var selectedType = d3.select('#selecttype').property("value")
-
-            console.log(selectedType)
-
-            // Add X axis
-            var x = d3.scaleLinear()
-              .domain([d3.min(data, function(c) { return c.plate_x})-3, d3.max(data, function(c) { return c.plate_x})    ])
-              .range([ 0, width ])
-            svg.select('g.x.axis').call(d3.axisBottom(x));
-
-            // Add Y axis
-            var y = d3.scaleLinear()
-              .domain([d3.min(data, function(c) { return c.plate_z}), d3.max(data, function(c) { return c.plate_z})    ])
-              .range([ height, 0])
-              svg.select('g.y.axis').call(d3.axisLeft(y));
-
-            var new_dots = svg.append('g')
-              .selectAll("dot")
-              .data(data, function (d) {return d.pitch_type == selectedType})
-              .enter()
-              .append("circle")
-                .attr("cx", function (d) { return x(d.plate_x); } )
-                .attr("cy", function (d) { return y(d.plate_z); } )
-                .attr("r", 1.5)
-                .style("fill", "#12a3a2")
-          })
-
-
-    })
-  })
+  // Get the selected name
+  generateVisualization(true)
 })
 
 

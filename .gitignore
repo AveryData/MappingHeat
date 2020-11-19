@@ -4,3 +4,5 @@
 venv/
 *.sqlite-journal
 __pycache__
+.idea
+model/.ipynb_checkpoints/*
