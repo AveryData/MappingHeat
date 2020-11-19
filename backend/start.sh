@@ -18,11 +18,6 @@ export FLASK_ENV=development
 echo "Init Database"
 flask init-db
 
-
-# Move to mapping_heat dir
-#echo "Moving into application diretory"
-#cd mapping_heat
-
 # Run the backend
 echo "Starting Server"
 flask run
