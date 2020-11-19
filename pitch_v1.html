@@ -205,7 +205,7 @@ function continuous(selector_id, colorscale) {
     image.data[4*i + 3] = 255;
   });
   ctx.putImageData(image, 0, 0);
-  
+
   var legendaxis = d3.axisRight()
     .scale(legendscale)
     .tickSize(6)
@@ -319,7 +319,7 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
 
   // Background sqaures
   var zoneSquares = []
-  
+
   // Bottom Row
   var bl = svg.append("rect")
     .attr('zone', 7)
@@ -368,7 +368,7 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
   zoneSquares.push(mm)
 
   var mr = svg.append("rect")
-    .attr('zone', 6) 
+    .attr('zone', 6)
     .attr("x", x(h_2))
     .attr("y", y(v_2))
     .attr("width", -x(far_left) + x(h_1))
@@ -502,7 +502,7 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
             if (curRect.attr('zone') === zone) {
               curRect.attr('class', null)
             }
-          }) 
+          })
         }
       } else {
         d3.selectAll('rect').attr('class', null)
@@ -517,7 +517,7 @@ function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
           })
         }
         var zoneProb = curZoneProbs[zone]
-        var text = 'Hit Probability for Zone ' + zone + ': ' + (zoneProb * 100).toFixed(6) + "%"
+        var text = 'Hit Probability for Zone ' + zone + ': ' + (zoneProb * 100).toFixed(3) + "%"
         d3.select('#hitProbability').text(text).attr('class', 'zoneProb')
       }
     })
@@ -617,7 +617,7 @@ function setPitchTypes (pitchingData) {
     .enter()
     .append('option')
     .text(function (d) { return d; }) // text showed in the menu
-    .attr("value", function (d) { return d; }) // corresponding value returned by the button 
+    .attr("value", function (d) { return d; }) // corresponding value returned by the button
 }
 
 // generate visualization based on current input values
